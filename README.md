@@ -33,3 +33,11 @@
 2. **¿Qué hace `prestamo.linea_ids.equipo_id.write(...)`? ¿Por qué no hace falta un `for` para cada equipo?**
    - En el ORM de Odoo, `prestamo.linea_ids` es un **recordset** (conjunto de registros) de líneas, y al acceder a `.equipo_id` sobre ese conjunto, Odoo obtiene automáticamente un nuevo recordset con **todos los equipos** asociados a esas líneas.
    - El método `.write({"estado": "prestado"})` en Odoo opera sobre todo el recordset de una sola vez (ejecutando un único `UPDATE` en SQL para todos los IDs del conjunto), por lo que es más limpio y eficiente que hacer un ciclo `for` equipo por equipo.
+
+### Paso 5. Reglas del préstamo
+1. **El campo `equipo_id` ya filtra los equipos disponibles. ¿Por qué hace falta el TODO 5?**
+   - El `domain="[('estado', '=', 'disponible')]"` en `equipo_id` solo filtra la lista desplegable **en el momento en que el usuario agrega la línea al préstamo en borrador**.
+   - Sin embargo, entre el momento en que se guarda el borrador y el momento en que se pulsa el botón **Prestar**, ese mismo equipo pudo haber sido prestado en otra solicitud o enviado a **En mantenimiento** desde el catálogo de Equipos. Por eso el `TODO 5` vuelve a verificar en `action_prestar` que cada equipo siga en estado `"disponible"` justo antes de entregarlo.
+2. **¿En qué momento se ejecuta un método con `@api.constrains`? ¿Y la validación de `action_prestar`?**
+   - Un método decorado con **`@api.constrains`** se ejecuta **automáticamente cada vez que se crea (`create`) o se modifica (`write`) el registro** y cambia alguno de los campos indicados en el decorador, antes de confirmar el guardado en la base de datos.
+   - En cambio, la validación dentro de **`action_prestar`** se ejecuta **únicamente cuando el usuario pulsa el botón Prestar** (o se invoca el método `action_prestar`) para pasar el préstamo de *Borrador* a *Prestado*.
