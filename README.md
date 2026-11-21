@@ -41,3 +41,11 @@
 2. **¿En qué momento se ejecuta un método con `@api.constrains`? ¿Y la validación de `action_prestar`?**
    - Un método decorado con **`@api.constrains`** se ejecuta **automáticamente cada vez que se crea (`create`) o se modifica (`write`) el registro** y cambia alguno de los campos indicados en el decorador, antes de confirmar el guardado en la base de datos.
    - En cambio, la validación dentro de **`action_prestar`** se ejecuta **únicamente cuando el usuario pulsa el botón Prestar** (o se invoca el método `action_prestar`) para pasar el préstamo de *Borrador* a *Prestado*.
+
+### Paso 6. Contacto, kanban y búsqueda
+1. **¿Qué pasa si arrastra una tarjeta del kanban a otra columna? ¿Por qué?**
+   - Al arrastrar la tarjeta de un equipo hacia otra columna en el kanban (por ejemplo de *Disponible* a *En mantenimiento*), Odoo **actualiza automáticamente el campo `estado` de ese equipo en la base de datos** con el valor de la nueva columna.
+   - Esto ocurre porque la vista kanban tiene `default_group_by="estado"`, y en Odoo las columnas agrupadas por un campo `Selection` editable permiten cambiar el valor del campo mediante *drag and drop* (ejecutando internamente un `.write({"estado": ...})`).
+2. **El campo `prestamo_ids` se agregó a `res.partner`. ¿Se crea una columna nueva en la tabla de contactos? Explique.**
+   - **No** se crea ninguna columna nueva en la tabla `res_partner` de PostgreSQL.
+   - Un campo `One2many` es un **campo virtual (relación inversa)** que no almacena datos en la tabla del modelo padre (`res_partner`), sino que consulta en la tabla secundaria (`prestamo_prestamo`) todos los registros cuya clave foránea `partner_id` (`Many2one`) coincida con el `id` del contacto.
