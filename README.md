@@ -18,3 +18,11 @@
    - Al combinarlo con `_inherit = ["mail.thread"]` (herencia por mezcla o *mixin*), el modelo nuevo `prestamo.prestamo` incorpora todos los campos y métodos del modelo abstracto `mail.thread` (como `message_ids`, `message_follower_ids` y `message_post()`), lo que permite usar la etiqueta `<chatter/>` en el formulario para registrar mensajes, notas y cambios de estado sin tener que programarlos desde cero.
 2. **¿Qué hace `tracking=True` en el campo `state`?**
    - Como el modelo hereda de `mail.thread`, el atributo `tracking=True` hace que Odoo **registre automáticamente en el chatter cada vez que cambia el valor del campo `state`** (por ejemplo: *Estado: Borrador → Prestado*), indicando qué usuario realizó el cambio y en qué fecha y hora ocurrió.
+
+### Paso 3. Equipos del préstamo
+1. **En `fields.One2many("prestamo.linea", "prestamo_id")`, ¿qué indica cada parámetro?**
+   - El **primer parámetro (`"prestamo.linea"`)** es el modelo destino o secundario (*comodel_name*) donde están las líneas detalle.
+   - El **segundo parámetro (`"prestamo_id"`)** es el nombre del campo `Many2one` dentro de `"prestamo.linea"` (*inverse_name*) que apunta de regreso al préstamo padre (`prestamo.prestamo`).
+2. **¿Qué pasa con las líneas cuando se borra un préstamo? ¿Qué parte del código lo define?**
+   - Cuando se elimina un registro de `prestamo.prestamo`, **todas sus líneas asociadas en `prestamo.linea` se eliminan automáticamente en cascada** de la base de datos.
+   - Lo define el parámetro **`ondelete="cascade"`** dentro del campo `prestamo_id = fields.Many2one("prestamo.prestamo", ..., ondelete="cascade")` en `models/prestamo_linea.py`.
