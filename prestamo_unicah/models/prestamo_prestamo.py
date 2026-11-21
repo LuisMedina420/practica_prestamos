@@ -63,8 +63,6 @@ class PrestamoPrestamo(models.Model):
                 raise UserError("Solo se puede prestar un préstamo en borrador.")
             if not prestamo.linea_ids:
                 raise UserError("Agregue al menos un equipo al préstamo.")
-            # TODO 4: si el solicitante es estudiante y lleva más de
-            # LIMITE_EQUIPOS_ESTUDIANTE equipos, lanzar UserError con el límite.
             if (
                 prestamo.tipo_solicitante == "estudiante"
                 and prestamo.cantidad_equipos > LIMITE_EQUIPOS_ESTUDIANTE
@@ -72,8 +70,6 @@ class PrestamoPrestamo(models.Model):
                 raise UserError(
                     f"Un estudiante no puede llevar más de {LIMITE_EQUIPOS_ESTUDIANTE} equipos por préstamo."
                 )
-            # TODO 5: recorrer las líneas; si algún equipo no está "disponible",
-            # lanzar UserError con el nombre del equipo.
             for linea in prestamo.linea_ids:
                 if linea.equipo_id.estado != "disponible":
                     raise UserError(
@@ -94,10 +90,19 @@ class PrestamoPrestamo(models.Model):
             prestamo.state = "devuelto"
             prestamo.message_post(body="Los equipos fueron devueltos.")
 
+    def action_marcar_atrasado(self):
+        hoy = fields.Date.context_today(self)
+        for prestamo in self:
+            if prestamo.state != "prestado":
+                raise UserError("Solo se puede marcar como atrasado un préstamo en estado Prestado.")
+            if prestamo.fecha_devolucion >= hoy:
+                raise UserError("La fecha de devolución todavía no ha pasado.")
+            prestamo.state = "atrasado"
+            prestamo.message_post(body="El préstamo fue marcado como atrasado.")
+
     @api.constrains("fecha_prestamo", "fecha_devolucion", "tipo_solicitante")
     def _check_fechas(self):
         for prestamo in self:
-            # TODO 1: la fecha de devolución no puede ser anterior a la fecha de préstamo.
             if (
                 prestamo.fecha_prestamo
                 and prestamo.fecha_devolucion
@@ -106,8 +111,6 @@ class PrestamoPrestamo(models.Model):
                 raise ValidationError(
                     "La fecha de devolución no puede ser anterior a la fecha de préstamo."
                 )
-            # TODO 2: si el solicitante es estudiante, dias_prestamo no puede superar
-            # DIAS_MAXIMOS_ESTUDIANTE.
             if (
                 prestamo.tipo_solicitante == "estudiante"
                 and prestamo.dias_prestamo > DIAS_MAXIMOS_ESTUDIANTE
@@ -119,8 +122,6 @@ class PrestamoPrestamo(models.Model):
     @api.constrains("linea_ids")
     def _check_equipos_repetidos(self):
         for prestamo in self:
-            # TODO 3: un equipo no puede aparecer dos veces en el mismo préstamo.
-            # Pista: compare len(prestamo.linea_ids) con len(prestamo.linea_ids.equipo_id).
             if len(prestamo.linea_ids) != len(prestamo.linea_ids.equipo_id):
                 raise ValidationError(
                     "Un mismo equipo no puede aparecer dos veces en el mismo préstamo."
