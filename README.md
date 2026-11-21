@@ -26,3 +26,10 @@
 2. **¿Qué pasa con las líneas cuando se borra un préstamo? ¿Qué parte del código lo define?**
    - Cuando se elimina un registro de `prestamo.prestamo`, **todas sus líneas asociadas en `prestamo.linea` se eliminan automáticamente en cascada** de la base de datos.
    - Lo define el parámetro **`ondelete="cascade"`** dentro del campo `prestamo_id = fields.Many2one("prestamo.prestamo", ..., ondelete="cascade")` en `models/prestamo_linea.py`.
+
+### Paso 4. Flujo de estados
+1. **Los botones ya se ocultan según el estado. ¿Por qué los métodos vuelven a validar el estado?**
+   - Porque el atributo `invisible="..."` en el XML **solo oculta el botón visualmente en la interfaz web**, pero no impide que el método de Python (`action_prestar` o `action_devolver`) sea invocado mediante llamadas por API/RPC, acciones de servidor, código de otros módulos o si dos pestañas abiertas del navegador pulsan el botón al mismo tiempo. Validar el estado dentro del método en Python garantiza la regla de negocio en el servidor en cualquier escenario.
+2. **¿Qué hace `prestamo.linea_ids.equipo_id.write(...)`? ¿Por qué no hace falta un `for` para cada equipo?**
+   - En el ORM de Odoo, `prestamo.linea_ids` es un **recordset** (conjunto de registros) de líneas, y al acceder a `.equipo_id` sobre ese conjunto, Odoo obtiene automáticamente un nuevo recordset con **todos los equipos** asociados a esas líneas.
+   - El método `.write({"estado": "prestado"})` en Odoo opera sobre todo el recordset de una sola vez (ejecutando un único `UPDATE` en SQL para todos los IDs del conjunto), por lo que es más limpio y eficiente que hacer un ciclo `for` equipo por equipo.
